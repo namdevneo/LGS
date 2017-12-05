@@ -1,11 +1,8 @@
 # Hydrating missing phone numbers
 
-## Tutorial
-https://github.com/namdevneo/LGS.git
-
 ##Quick Setup
 
-1) `git clone https://github.com/namdevneo/LGS.git` <br>
+1) `git clone https://github.com/namdevneo/lgs.git` <br>
 2) `cd LGS` <br>
 3) `npm install` <br>
 4) `node app.js` <br>

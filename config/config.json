@@ -1,0 +1,16 @@
+{
+    "development": {
+        "user": {
+            "email": "sandip.ghadge@wwindia.com",
+            "password": "KUjRN2CJeAbP"
+        },
+        "apiUrl":"http://localhost:8080"
+    },
+    "production": {
+        "user": {
+            "email": "",
+            "password": ""
+        },
+        "apiUrl":"http://api.le-guide-sante.org"
+    }
+}

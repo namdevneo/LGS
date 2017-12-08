@@ -122,9 +122,9 @@ let professionalWrapper = (() =>{
                 .then((result) => {
                     let updatedResult = [];
                     data.forEach((singleItem) => {
-                        let professionals = await search(singleItem, result.token);
+                        let professionals = search(singleItem, result.token);
                         if(professionals.length) {
-                            let prof = await updateProfessional(singleItem, professionals, result.token);
+                            let prof = updateProfessional(singleItem, professionals, result.token);
                             if(prof.length) {
                                 updatedResult.push(prof);
                             }

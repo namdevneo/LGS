@@ -3,7 +3,12 @@ const express = require('express'),
     bodyParser = require('body-parser'),
     multer = require('multer'),
     fs = require('fs'),
-    xlsxj = require("xlsx-to-json-lc");
+    xlsxj = require("xlsx-to-json-lc"),
+    dir = './uploads/';
+
+if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+}
 
 
 let professional = require('./app/professional');

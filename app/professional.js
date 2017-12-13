@@ -69,14 +69,13 @@ let professionalWrapper = (() =>{
 
     updateProfessionalPhone = (singleItem, offices, token) => {
         let result = [];
-         offices.forEach(async(singleOffice) => {
-            if(!singleOffice.phone) {
-               prof = await update(singleItem, singleOffice, token);
-               result.push(prof);
-               logger.log('info', 'updated professional');
-               logger.log('info', result);
-            }
-        })
+        Promise.all(offices.map(async (singleOffice) => {
+            let prof = await update(singleItem, singleOffice, token);
+            result.push(prof);
+            logger.log('info', 'updated professional');
+            logger.log('info', result);
+        }));
+
         return result;
     };
 
@@ -95,7 +94,7 @@ let professionalWrapper = (() =>{
         return matchProfessional;
     };
 
-    updateProfessional = async(singleItem, professionals, token) => {
+    updateProfessional = async (singleItem, professionals, token) => {
         let result = [];
         if (professionals.length === 1) {
             if (professionals[0].offices) {
@@ -121,15 +120,17 @@ let professionalWrapper = (() =>{
             auth.login()
                 .then((result) => {
                     let updatedResult = [];
-                    data.forEach((singleItem) => {
-                        let professionals = search(singleItem, result.token);
-                        if(professionals.length) {
-                            let prof = updateProfessional(singleItem, professionals, result.token);
-                            if(prof.length) {
+
+                    Promise.all(data.map(async (singleItem) => {
+                        let professionals = await search(singleItem, result.token);
+                        if (professionals.length) {
+                            let prof = await updateProfessional(singleItem, professionals, result.token);
+                            if (prof.length) {
                                 updatedResult.push(prof);
                             }
                         }
-                    });
+                    }));
+
                     resolve({message:"Processing hydrating phone numbers."});
                 })
                 .catch((err) => {

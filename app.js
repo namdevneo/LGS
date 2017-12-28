@@ -1,3 +1,5 @@
+'use strict';
+
 const express = require('express'),
     app = express(),
     bodyParser = require('body-parser'),
@@ -10,9 +12,7 @@ if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
 }
 
-
 let professional = require('./app/professional');
-
 
 let env = process.env.NODE_ENV || "development";
 global.config = require('./config/config.json')[env];
@@ -92,6 +92,24 @@ app.post('/upload', function(req, res) {
         });
     })
 });
+
+app.get('/multiple', (req, res) => {
+
+    const path = '/home/neosoft/Downloads/test/'
+    let file = req.query.file;
+
+    getJsonData(path + file).then(result => {
+        professional.hydrateMissingPhone(result.data)
+            .then((data) => {
+                res.json({ success: true, data: data });
+            })
+            .catch((err) => {
+                res.json({ success: false, error: err });
+            });
+    }).catch(err => {
+        console.log(err);
+    })
+})
 
 app.get('/',function(req,res){
 	res.sendFile(__dirname + "/index.html");

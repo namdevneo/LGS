@@ -4,7 +4,7 @@
             "email": "sandip.ghadge@wwindia.com",
             "password": "KUjRN2CJeAbP"
         },
-        "apiUrl":"http://localhost:8080"
+        "apiUrl":"http://api.le-guide-sante.org"
     },
     "production": {
         "user": {

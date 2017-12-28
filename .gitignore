@@ -10,4 +10,4 @@ node_modules
 output.json
 
 log file
-log/
+logs/

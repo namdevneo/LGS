@@ -1,3 +1,5 @@
+'use strict';
+
 const request = require('request-promise'),
     Promise = require('bluebird'),
     _ = require('lodash'),
@@ -8,7 +10,7 @@ let professionalWrapper = (() =>{
     search = (professional, token) => {
         return new Promise((resolve, reject) => {
             let apiUrl = config.apiUrl;
-            let name = professional['extractor 1 1'].split(' ');
+            let name = typeof professional['extractor 1 1'] == 'undefined'? '': professional['extractor 1 1'].split(' ');
             let auth = 'Bearer '+token;
             let options = {
                 method: "GET",
@@ -18,7 +20,8 @@ let professionalWrapper = (() =>{
                     lastname:name[1]
                 },
                 headers: {
-                    'Authorization': auth
+                    'Authorization': auth,
+                    'Connection': 'keep-alive'
                 },
                 json: true // Automatically parses the JSON string in the response
             };
@@ -35,45 +38,45 @@ let professionalWrapper = (() =>{
 
     update = (singleItem, office, token) => {
         return new Promise((resolve, reject) => {
-            let addrArr = singleItem['extractor 2 1'].split(',');
-            let address = addrArr[0];
-            let pinValie = addrArr[1].trim().split('   ');
-            let phone = singleItem['extractor 3 1'].replace(/\s+/g, '');
+            let addrArr = typeof singleItem['extractor 2 1'] == 'undefined'? '': singleItem['extractor 2 1'].split(',');
+            let address = typeof addrArr[0] == 'undefined'? '': addrArr[0];
+            let pinValie = typeof addrArr[1] == 'undefined'? '': addrArr[1].trim().split('   ');
+            let phone = typeof singleItem['extractor 3 1'] ==  'undefined'? '': singleItem['extractor 3 1'].replace(/\s+/g, '');
 
             let auth = 'Bearer '+token;
             let options = {
                 uri: config.apiUrl +'/office/'+office.id,
                 method: "PUT",
                 headers: {
-                    'Authorization': auth
+                    'Authorization': auth,
+                    'Connection': 'keep-alive'
                 },
                 body: {
                   phone:phone,
                   address: address,
-                  postal_code:pinValie[0],
-                  ville:pinValie[1]
+                  postal_code: typeof pinValie[0] == 'undefined'? '': pinValie[0],
+                  ville: typeof pinValie[1] == 'undefined'? '': pinValie[1]
                 },
                 json: true // Automatically parses the JSON string in the response
             };
 
             request(options)
                 .then((result) => {
-                   resolve(result);
+                    logMessage(`info`, `Professional updated.`, result);
+                    resolve(result);
                 })
                 .catch((err) => {
-                    console.log(err);
+                    logMessage(`info`, `Error while updating professional.`, singleItem);
+                    reject(err);
                 });
         });
     };
-
 
     updateProfessionalPhone = (singleItem, offices, token) => {
         let result = [];
         Promise.all(offices.map(async (singleOffice) => {
             let prof = await update(singleItem, singleOffice, token);
             result.push(prof);
-            logger.log('info', 'updated professional');
-            logger.log('info', result);
         }));
 
         return result;
@@ -99,18 +102,22 @@ let professionalWrapper = (() =>{
         if (professionals.length === 1) {
             if (professionals[0].offices) {
                 let offices = professionals[0].offices;
-                if (offices.length) {
+                if (offices.length)
                     return result = await updateProfessionalPhone(singleItem, offices, token)
-                }
-            }
+                else
+                    logMessage(`info`, `Professional\'s office not found.`, singleItem);
+            } else
+                logMessage(`info`, `Professional\'s offices not found.`, singleItem);
         } else {
             let matchProfessional = await matchProfessionalWithAddress(singleItem, professionals)
             if(matchProfessional.length) {
                 let offices = matchProfessional[0].offices;
-                if (offices.length) {
-                    return result = await updateProfessionalPhone(singleItem, offices, token)
-                }
-            }
+                if (offices.length)
+                    return result = await updateProfessionalPhone(singleItem, offices, token);
+                else
+                    logMessage(`info`, `Professional\'s offices not found.`, singleItem);
+            } else
+                logMessage(`info`, `Professional not found.`, singleItem);
         }
         return result;
     };
@@ -118,32 +125,40 @@ let professionalWrapper = (() =>{
     _hydrateMissingPhone = (data) => {
         return new Promise((resolve, reject)=>{
             auth.login()
-                .then((result) => {
-                    let updatedResult = [];
+            .then((result) => {
+                let updatedResult = [];
 
-                    Promise.all(data.map(async (singleItem) => {
-                        let professionals = await search(singleItem, result.token);
-                        if (professionals.length) {
-                            let prof = await updateProfessional(singleItem, professionals, result.token);
-                            if (prof.length) {
-                                updatedResult.push(prof);
-                            }
-                        }
-                    }));
+                data.forEach(async(singleItem) => {
 
-                    resolve({message:"Processing hydrating phone numbers."});
-                })
-                .catch((err) => {
-                    reject(err)
+                    let professionals = await search(singleItem, result.token);
+                    if (professionals.length) {
+                        let prof = await updateProfessional(singleItem, professionals, result.token);
+                        if (prof.length)
+                            updatedResult.push(prof);
+                    } else
+                        logMessage(`info`, `Professional not found.`, singleItem);
                 });
+
+                Promise.all(updatedResult).then(function() {
+                    resolve({message:`Processing hydrating phone numbers done.`});
+                }).catch((err) => {
+                    reject({message:"Processing hydrating phone numbers failed.", err: err});
+                });
+            })
+            .catch((err) => {
+                reject(err)
+            });
         });
     };
-
 
     return {
         hydrateMissingPhone: _hydrateMissingPhone
     }
 
+    function logMessage( messageType, message, logData = '') {
+      logger.log(messageType, message);
+      logger.log(messageType, logData);
+    }
 })();
 
 module.exports = professionalWrapper;
